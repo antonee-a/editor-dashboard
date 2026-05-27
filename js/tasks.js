@@ -256,8 +256,6 @@ async function openEditModal(id) {
   document.getElementById('f-points').value        = task.task_points ?? '';
   document.getElementById('f-date-assigned').value = task.date_assigned || '';
   document.getElementById('f-due-date').value      = task.due_date || '';
-  document.getElementById('f-quality').value       = task.quality_rating ?? '';
-  document.getElementById('f-speed').value         = task.speed_rating ?? '';
   document.getElementById('f-revisions').value     = task.revisions ?? 0;
   document.getElementById('f-brief-url').value     = task.brief_url || '';
   document.getElementById('f-finished-url').value  = task.finished_product_url || '';
@@ -279,8 +277,6 @@ async function handleSubmit(e) {
     task_points:           numOrNull('f-points'),
     date_assigned:         document.getElementById('f-date-assigned').value || null,
     due_date:              document.getElementById('f-due-date').value  || null,
-    quality_rating:        numOrNull('f-quality'),
-    speed_rating:          numOrNull('f-speed'),
     revisions:             numOrNull('f-revisions') ?? 0,
     brief_url:             document.getElementById('f-brief-url').value  || null,
     finished_product_url:  document.getElementById('f-finished-url').value || null,
