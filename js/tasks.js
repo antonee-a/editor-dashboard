@@ -41,14 +41,14 @@ function bindAddClientButtons() {
 
   function showPopover(anchorEl) {
     const rect = anchorEl.getBoundingClientRect();
-    popover.style.top  = (rect.bottom + 6) + 'px';
-    popover.style.left = rect.left + 'px';
-    popover.classList.remove('hidden');
+    popover.style.top     = (rect.bottom + 6) + 'px';
+    popover.style.left    = rect.left + 'px';
+    popover.style.display = 'flex';
     input.value = '';
     input.focus();
   }
 
-  function hidePopover() { popover.classList.add('hidden'); }
+  function hidePopover() { popover.style.display = 'none'; }
 
   ['btn-add-client-filter', 'btn-add-client-modal'].forEach(id => {
     document.getElementById(id)?.addEventListener('click', e => {
