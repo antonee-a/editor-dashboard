@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/config.js"></script>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Sidebar Nav -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">Editor OS</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#" class="nav-item active" data-section="tasks">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Tasks
+        </a></li>
+        <li><a href="#" class="nav-item" data-section="teams">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Teams
+        </a></li>
+        <li><a href="#" class="nav-item" data-section="analytics">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+
+      <!-- ── TASKS SECTION ── -->
+      <section id="section-tasks" class="section active">
+        <div class="section-header">
+          <div>
+            <h1>Tasks</h1>
+            <p class="subtitle">Active production queue</p>
+          </div>
+          <button class="btn-primary" id="btn-add-task">+ Add Task</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <select id="filter-status">
+            <option value="">All Statuses</option>
+            <option value="In Progress" selected>In Progress</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <select id="filter-priority">
+            <option value="">All Priorities</option>
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select id="filter-client">
+            <option value="">All Clients</option>
+            <option value="S2L">S2L</option>
+            <option value="Land Shark">Land Shark</option>
+            <option value="GGG">GGG</option>
+            <option value="Internal">Internal</option>
+          </select>
+          <select id="filter-editor">
+            <option value="">All Editors</option>
+          </select>
+          <select id="filter-format">
+            <option value="">All Formats</option>
+            <option value="UGC">UGC</option>
+            <option value="Talking Head">Talking Head</option>
+            <option value="Cinematic">Cinematic</option>
+            <option value="Animation">Animation</option>
+            <option value="Mixed">Mixed</option>
+          </select>
+          <select id="sort-tasks">
+            <option value="date_assigned">Sort: Date Assigned</option>
+            <option value="due_date">Sort: Due Date</option>
+            <option value="priority">Sort: Priority</option>
+            <option value="task_points">Sort: Task Points</option>
+          </select>
+          <button class="btn-ghost" id="btn-clear-filters">Clear</button>
+        </div>
+
+        <!-- Task Grid -->
+        <div id="task-grid" class="task-grid">
+          <div class="loading">Loading tasks...</div>
+        </div>
+      </section>
+
+      <!-- ── TEAMS SECTION ── -->
+      <section id="section-teams" class="section">
+        <div class="section-header">
+          <div>
+            <h1>Teams</h1>
+            <p class="subtitle">Editor profiles and workload</p>
+          </div>
+          <button class="btn-primary" id="btn-add-editor">+ Add Editor</button>
+        </div>
+        <div id="team-grid" class="team-grid">
+          <div class="loading">Loading team...</div>
+        </div>
+
+        <!-- Editor Drilldown Panel -->
+        <div id="editor-panel" class="side-panel hidden">
+          <div class="panel-header">
+            <h2 id="panel-editor-name">—</h2>
+            <button class="btn-icon" id="btn-close-panel">✕</button>
+          </div>
+          <div id="panel-content" class="panel-content"></div>
+        </div>
+        <div id="panel-overlay" class="overlay hidden"></div>
+      </section>
+
+      <!-- ── ANALYTICS SECTION ── -->
+      <section id="section-analytics" class="section">
+        <div class="section-header">
+          <div>
+            <h1>Analytics</h1>
+            <p class="subtitle">Production output and editor velocity</p>
+          </div>
+          <div class="date-range-controls">
+            <button class="btn-ghost range-btn active" data-range="week">Week</button>
+            <button class="btn-ghost range-btn" data-range="month">Month</button>
+            <button class="btn-ghost range-btn" data-range="all">All Time</button>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-row" id="analytics-stats">
+          <div class="stat-card"><span class="stat-value" id="stat-total">—</span><span class="stat-label">Videos Produced</span></div>
+          <div class="stat-card"><span class="stat-value" id="stat-open">—</span><span class="stat-label">Open Tasks</span></div>
+          <div class="stat-card"><span class="stat-value" id="stat-completed">—</span><span class="stat-label">Completed</span></div>
+          <div class="stat-card"><span class="stat-value" id="stat-avg-quality">—</span><span class="stat-label">Avg Quality</span></div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <h3>Production Trend</h3>
+            <canvas id="chart-trend"></canvas>
+          </div>
+          <div class="chart-card chart-card--small">
+            <h3>By Format</h3>
+            <canvas id="chart-format"></canvas>
+          </div>
+          <div class="chart-card chart-card--small">
+            <h3>By Client</h3>
+            <canvas id="chart-client"></canvas>
+          </div>
+        </div>
+
+        <!-- Editor Velocity Table -->
+        <div class="table-card">
+          <h3>Editor Velocity</h3>
+          <table class="velocity-table">
+            <thead>
+              <tr>
+                <th>Editor</th>
+                <th>Completed</th>
+                <th>Avg Revisions</th>
+                <th>Avg Quality</th>
+                <th>Avg Speed</th>
+                <th>Items/Day</th>
+                <th>Reliability</th>
+                <th>Speed Tier</th>
+              </tr>
+            </thead>
+            <tbody id="velocity-tbody">
+              <tr><td colspan="8" class="loading">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ── ADD / EDIT TASK MODAL ── -->
+  <div id="task-modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-task-title">Add Task</h2>
+        <button class="btn-icon" id="btn-close-task-modal">✕</button>
+      </div>
+      <form id="task-form" class="modal-form">
+        <input type="hidden" id="task-id-hidden" />
+        <div class="form-row">
+          <label>Title <input type="text" id="f-title" required /></label>
+          <label>Client
+            <select id="f-client" required>
+              <option value="">—</option>
+              <option value="S2L">S2L</option>
+              <option value="Land Shark">Land Shark</option>
+              <option value="GGG">GGG</option>
+              <option value="Internal">Internal</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Duration
+            <select id="f-duration">
+              <option value="">—</option>
+              <option value="15s">15s</option>
+              <option value="30s">30s</option>
+              <option value="60s">60s</option>
+              <option value="90s">90s</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>Format
+            <select id="f-format">
+              <option value="">—</option>
+              <option value="UGC">UGC</option>
+              <option value="Talking Head">Talking Head</option>
+              <option value="Cinematic">Cinematic</option>
+              <option value="Animation">Animation</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Priority
+            <select id="f-priority">
+              <option value="Medium">Medium</option>
+              <option value="Urgent">Urgent</option>
+              <option value="High">High</option>
+              <option value="Low">Low</option>
+            </select>
+          </label>
+          <label>Status
+            <select id="f-status">
+              <option value="In Progress">In Progress</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Assigned To <select id="f-assigned"></select></label>
+          <label>Task Points (0–5) <input type="number" id="f-points" min="0" max="5" /></label>
+        </div>
+        <div class="form-row">
+          <label>Date Assigned <input type="date" id="f-date-assigned" /></label>
+          <label>Due Date <input type="date" id="f-due-date" /></label>
+        </div>
+        <div class="form-row">
+          <label>Quality Rating (1–5) <input type="number" id="f-quality" min="1" max="5" /></label>
+          <label>Speed Rating (1–5) <input type="number" id="f-speed" min="1" max="5" /></label>
+        </div>
+        <div class="form-row">
+          <label>Revisions <input type="number" id="f-revisions" min="0" value="0" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Brief URL <input type="url" id="f-brief-url" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Finished Product URL <input type="url" id="f-finished-url" /></label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" id="btn-cancel-task">Cancel</button>
+          <button type="submit" class="btn-primary">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="task-modal-overlay" class="overlay hidden"></div>
+
+  <!-- ── ADD / EDIT EDITOR MODAL ── -->
+  <div id="editor-modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-editor-title">Add Editor</h2>
+        <button class="btn-icon" id="btn-close-editor-modal">✕</button>
+      </div>
+      <form id="editor-form" class="modal-form">
+        <input type="hidden" id="editor-id-hidden" />
+        <div class="form-row">
+          <label>Name <input type="text" id="ef-name" required /></label>
+          <label>Role <input type="text" id="ef-role" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Speed Tier
+            <select id="ef-tier">
+              <option value="Onboarding">Onboarding</option>
+              <option value="Standard">Standard</option>
+              <option value="Fast">Fast</option>
+              <option value="Elite">Elite</option>
+            </select>
+          </label>
+          <label>Status
+            <select id="ef-status">
+              <option value="Active">Active</option>
+              <option value="Unavailable">Unavailable</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Availability / Schedule <input type="text" id="ef-availability" placeholder="e.g. Mon–Fri 9am–6pm EST" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Strongest Formats <input type="text" id="ef-formats" placeholder="Comma-separated: UGC, Cinematic" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Skills in Development <input type="text" id="ef-skills" placeholder="Comma-separated" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Best-fit tasks <input type="text" id="ef-pref-best" /></label>
+        </div>
+        <div class="form-row form-row--full">
+          <label>Tasks to avoid <input type="text" id="ef-pref-avoid" /></label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" id="btn-cancel-editor">Cancel</button>
+          <button type="submit" class="btn-primary">Save Editor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="editor-modal-overlay" class="overlay hidden"></div>
+
+  <script type="module" src="js/tasks.js"></script>
+  <script type="module" src="js/teams.js"></script>
+  <script type="module" src="js/analytics.js"></script>
+</body>
+</html>
