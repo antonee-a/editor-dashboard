@@ -60,13 +60,12 @@
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
-          <select id="filter-client">
-            <option value="">All Clients</option>
-            <option value="S2L">S2L</option>
-            <option value="Land Shark">Land Shark</option>
-            <option value="GGG">GGG</option>
-            <option value="Internal">Internal</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:4px">
+            <select id="filter-client">
+              <option value="">All Clients</option>
+            </select>
+            <button class="btn-icon" id="btn-add-client-filter" title="Add client" style="font-size:18px;padding:2px 6px">+</button>
+          </div>
           <select id="filter-editor">
             <option value="">All Editors</option>
           </select>
@@ -193,13 +192,10 @@
         <div class="form-row">
           <label>Title <input type="text" id="f-title" required /></label>
           <label>Client
-            <select id="f-client" required>
-              <option value="">—</option>
-              <option value="S2L">S2L</option>
-              <option value="Land Shark">Land Shark</option>
-              <option value="GGG">GGG</option>
-              <option value="Internal">Internal</option>
-            </select>
+            <div style="display:flex;align-items:center;gap:4px">
+              <select id="f-client" required style="flex:1"></select>
+              <button type="button" class="btn-icon" id="btn-add-client-modal" title="Add client" style="font-size:18px;padding:2px 6px;margin-top:0">+</button>
+            </div>
           </label>
         </div>
         <div class="form-row">

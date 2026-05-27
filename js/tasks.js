@@ -6,10 +6,42 @@ let allEditors = [];
 
 // ── Init ───────────────────────────────────
 async function init() {
+  populateClientDropdowns();
   await loadEditors();
   await loadTasks();
   bindFilters();
   bindModal();
+  bindAddClientButtons();
+}
+
+// ── Client Dropdowns ───────────────────────
+function populateClientDropdowns() {
+  const clients = getClients();
+
+  const filterSel = document.getElementById('filter-client');
+  filterSel.innerHTML = '<option value="">All Clients</option>';
+  clients.forEach(c => {
+    const o = document.createElement('option'); o.value = o.textContent = c;
+    filterSel.appendChild(o);
+  });
+
+  const formSel = document.getElementById('f-client');
+  formSel.innerHTML = '<option value="">—</option>';
+  clients.forEach(c => {
+    const o = document.createElement('option'); o.value = o.textContent = c;
+    formSel.appendChild(o);
+  });
+}
+
+function bindAddClientButtons() {
+  ['btn-add-client-filter', 'btn-add-client-modal'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => {
+      const name = prompt('New client name:');
+      if (!name?.trim()) return;
+      addClient(name);
+      populateClientDropdowns();
+    });
+  });
 }
 
 // ── Data ───────────────────────────────────
