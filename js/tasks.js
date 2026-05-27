@@ -324,7 +324,13 @@ function pointsToTime(p) {
 }
 
 function statusBadge(s) {
-  const cls = { 'In Progress': 'badge-status-progress', 'Under Review': 'badge-status-review', 'Completed': 'badge-status-completed' };
+  const cls = {
+    'Assigned':     'badge-status-assigned',
+    'In Progress':  'badge-status-progress',
+    'Under Review': 'badge-status-review',
+    'Ready':        'badge-status-ready',
+    'Completed':    'badge-status-completed',
+  };
   return `<span class="badge ${cls[s] || ''}">${s}</span>`;
 }
 
