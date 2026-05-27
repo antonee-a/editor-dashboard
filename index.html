@@ -60,11 +60,15 @@
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
-          <div style="display:flex;align-items:center;gap:4px">
+          <div style="position:relative">
             <select id="filter-client">
               <option value="">All Clients</option>
             </select>
-            <button class="btn-icon" id="btn-add-client-filter" title="Add client" style="font-size:18px;padding:2px 6px">+</button>
+            <div id="new-client-filter-bar" style="display:none;margin-top:4px;position:absolute;left:0;z-index:50;display:none;gap:4px;align-items:center">
+              <input id="new-client-filter-input" type="text" placeholder="Client name…" style="background:var(--bg-3);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:var(--radius);font-size:12px;width:130px" />
+              <button id="new-client-filter-confirm" class="btn-primary" style="padding:5px 10px;font-size:12px">Add</button>
+              <button id="new-client-filter-cancel" class="btn-icon">✕</button>
+            </div>
           </div>
           <select id="filter-editor">
             <option value="">All Editors</option>
@@ -192,9 +196,11 @@
         <div class="form-row">
           <label>Title <input type="text" id="f-title" required /></label>
           <label>Client
-            <div style="display:flex;align-items:center;gap:4px">
-              <select id="f-client" required style="flex:1"></select>
-              <button type="button" class="btn-icon" id="btn-add-client-modal" title="Add client" style="font-size:18px;padding:2px 6px;margin-top:0">+</button>
+            <select id="f-client" required></select>
+            <div id="new-client-modal-bar" style="display:none;margin-top:4px;gap:4px;align-items:center">
+              <input id="new-client-modal-input" type="text" placeholder="Client name…" style="background:var(--bg-3);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:var(--radius);font-size:12px;flex:1" />
+              <button type="button" id="new-client-modal-confirm" class="btn-primary" style="padding:5px 10px;font-size:12px">Add</button>
+              <button type="button" id="new-client-modal-cancel" class="btn-icon">✕</button>
             </div>
           </label>
         </div>
@@ -320,23 +326,7 @@
   </div>
   <div id="editor-modal-overlay" class="overlay hidden"></div>
 
-  <!-- Add Client Popover -->
-  <div id="add-client-popover" style="
-    display:none; position:fixed; z-index:500;
-    background:var(--bg-2); border:1px solid var(--border);
-    border-radius:var(--radius); padding:10px;
-    gap:6px; align-items:center;
-    box-shadow:0 4px 20px rgba(0,0,0,.4);
-  ">
-    <input id="add-client-input" type="text" placeholder="Client name…" style="
-      background:var(--bg-3); color:var(--text); border:1px solid var(--border);
-      padding:6px 10px; border-radius:var(--radius); font-size:13px; width:160px;
-    " />
-    <button id="add-client-confirm" class="btn-primary" style="padding:6px 12px">Add</button>
-    <button id="add-client-cancel" class="btn-icon">✕</button>
-  </div>
-
-  <script type="module" src="js/tasks.js"></script>
+<script type="module" src="js/tasks.js"></script>
   <script type="module" src="js/teams.js"></script>
   <script type="module" src="js/analytics.js"></script>
 </body>

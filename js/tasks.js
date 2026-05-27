@@ -19,42 +19,57 @@ function populateClientDropdowns() {
   const clients = getClients();
 
   const filterSel = document.getElementById('filter-client');
+  const saved = filterSel.value;
   filterSel.innerHTML = '<option value="">All Clients</option>';
   clients.forEach(c => {
     const o = document.createElement('option'); o.value = o.textContent = c;
     filterSel.appendChild(o);
   });
+  filterSel.innerHTML += '<option value="__add__">+ Add new client…</option>';
+  filterSel.value = saved;
 
   const formSel = document.getElementById('f-client');
+  const savedForm = formSel.value;
   formSel.innerHTML = '<option value="">—</option>';
   clients.forEach(c => {
     const o = document.createElement('option'); o.value = o.textContent = c;
     formSel.appendChild(o);
   });
+  formSel.innerHTML += '<option value="__add__">+ Add new client…</option>';
+  formSel.value = savedForm;
 }
 
 function bindAddClientButtons() {
-  const popover = document.getElementById('add-client-popover');
-  const input   = document.getElementById('add-client-input');
-  const confirm = document.getElementById('add-client-confirm');
-  const cancel  = document.getElementById('add-client-cancel');
+  bindInlineAdd(
+    'filter-client',
+    'new-client-filter-bar',
+    'new-client-filter-input',
+    'new-client-filter-confirm',
+    'new-client-filter-cancel'
+  );
+  bindInlineAdd(
+    'f-client',
+    'new-client-modal-bar',
+    'new-client-modal-input',
+    'new-client-modal-confirm',
+    'new-client-modal-cancel'
+  );
+}
 
-  function showPopover(anchorEl) {
-    const rect = anchorEl.getBoundingClientRect();
-    popover.style.top     = (rect.bottom + 6) + 'px';
-    popover.style.left    = rect.left + 'px';
-    popover.style.display = 'flex';
-    input.value = '';
-    input.focus();
-  }
+function bindInlineAdd(selId, barId, inputId, confirmId, cancelId) {
+  const sel     = document.getElementById(selId);
+  const bar     = document.getElementById(barId);
+  const input   = document.getElementById(inputId);
+  const confirm = document.getElementById(confirmId);
+  const cancel  = document.getElementById(cancelId);
 
-  function hidePopover() { popover.style.display = 'none'; }
-
-  ['btn-add-client-filter', 'btn-add-client-modal'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', e => {
-      e.stopPropagation();
-      showPopover(e.currentTarget);
-    });
+  sel.addEventListener('change', () => {
+    if (sel.value === '__add__') {
+      bar.style.display = 'flex';
+      input.value = '';
+      input.focus();
+      sel.value = '';
+    }
   });
 
   confirm.addEventListener('click', () => {
@@ -62,18 +77,16 @@ function bindAddClientButtons() {
     if (!name) return;
     addClient(name);
     populateClientDropdowns();
-    hidePopover();
+    sel.value = name;
+    bar.style.display = 'none';
   });
 
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') confirm.click();
-    if (e.key === 'Escape') hidePopover();
+    if (e.key === 'Enter') { e.preventDefault(); confirm.click(); }
+    if (e.key === 'Escape') { bar.style.display = 'none'; }
   });
 
-  cancel.addEventListener('click', hidePopover);
-  document.addEventListener('click', e => {
-    if (!popover.contains(e.target)) hidePopover();
-  });
+  cancel.addEventListener('click', () => { bar.style.display = 'none'; });
 }
 
 // ── Data ───────────────────────────────────
