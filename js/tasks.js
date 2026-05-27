@@ -34,13 +34,45 @@ function populateClientDropdowns() {
 }
 
 function bindAddClientButtons() {
+  const popover = document.getElementById('add-client-popover');
+  const input   = document.getElementById('add-client-input');
+  const confirm = document.getElementById('add-client-confirm');
+  const cancel  = document.getElementById('add-client-cancel');
+
+  function showPopover(anchorEl) {
+    const rect = anchorEl.getBoundingClientRect();
+    popover.style.top  = (rect.bottom + 6) + 'px';
+    popover.style.left = rect.left + 'px';
+    popover.classList.remove('hidden');
+    input.value = '';
+    input.focus();
+  }
+
+  function hidePopover() { popover.classList.add('hidden'); }
+
   ['btn-add-client-filter', 'btn-add-client-modal'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', () => {
-      const name = prompt('New client name:');
-      if (!name?.trim()) return;
-      addClient(name);
-      populateClientDropdowns();
+    document.getElementById(id)?.addEventListener('click', e => {
+      e.stopPropagation();
+      showPopover(e.currentTarget);
     });
+  });
+
+  confirm.addEventListener('click', () => {
+    const name = input.value.trim();
+    if (!name) return;
+    addClient(name);
+    populateClientDropdowns();
+    hidePopover();
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirm.click();
+    if (e.key === 'Escape') hidePopover();
+  });
+
+  cancel.addEventListener('click', hidePopover);
+  document.addEventListener('click', e => {
+    if (!popover.contains(e.target)) hidePopover();
   });
 }
 
