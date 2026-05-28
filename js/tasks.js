@@ -178,7 +178,7 @@ function applyFilters(tasks) {
     return true;
   });
 
-  const priorityOrder = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
+  const priorityOrder = { Urgent: 0, High: 1, Normal: 2, Low: 3 };
   result.sort((a, b) => {
     if (sort === 'priority')     return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
     if (sort === 'task_points')  return (b.task_points ?? 0) - (a.task_points ?? 0);
@@ -250,14 +250,14 @@ async function openEditModal(id) {
   document.getElementById('f-client').value        = task.client || '';
   document.getElementById('f-duration').value      = task.duration || '';
   document.getElementById('f-format').value        = task.format || '';
-  document.getElementById('f-priority').value      = task.priority || 'Medium';
+  document.getElementById('f-priority').value      = task.priority || 'Normal';
   document.getElementById('f-status').value        = task.status || 'In Progress';
   document.getElementById('f-assigned').value      = task.assigned_to || '';
   document.getElementById('f-points').value        = task.task_points ?? '';
   document.getElementById('f-date-assigned').value = task.date_assigned || '';
   document.getElementById('f-due-date').value      = task.due_date || '';
   document.getElementById('f-revisions').value     = task.revisions ?? 0;
-  document.getElementById('f-brief-url').value     = task.brief_url || '';
+  document.getElementById('f-brief').value         = task.brief || '';
   document.getElementById('f-finished-url').value  = task.finished_product_url || '';
   showModal();
 }
@@ -278,7 +278,7 @@ async function handleSubmit(e) {
     date_assigned:         document.getElementById('f-date-assigned').value || null,
     due_date:              document.getElementById('f-due-date').value  || null,
     revisions:             numOrNull('f-revisions') ?? 0,
-    brief_url:             document.getElementById('f-brief-url').value  || null,
+    brief:                 document.getElementById('f-brief').value  || null,
     finished_product_url:  document.getElementById('f-finished-url').value || null,
   };
 
@@ -331,7 +331,7 @@ function statusBadge(s) {
 }
 
 function priorityBadge(p) {
-  const cls = { Urgent: 'badge-priority-urgent', High: 'badge-priority-high', Medium: 'badge-priority-medium', Low: 'badge-priority-low' };
+  const cls = { Urgent: 'badge-priority-urgent', High: 'badge-priority-high', Normal: 'badge-priority-medium', Low: 'badge-priority-low' };
   return `<span class="badge ${cls[p] || ''}">${p}</span>`;
 }
 
