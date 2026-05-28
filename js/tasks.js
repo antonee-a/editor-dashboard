@@ -11,6 +11,7 @@ async function init() {
   await loadTasks();
   bindFilters();
   bindModal();
+  bindTaskPanel();
   bindAddClientButtons();
 }
 
@@ -117,7 +118,7 @@ function renderTasks(tasks) {
   }
   grid.innerHTML = tasks.map(taskCard).join('');
   grid.querySelectorAll('.task-card').forEach(card => {
-    card.addEventListener('click', () => openEditModal(card.dataset.id));
+    card.addEventListener('click', () => openTaskPanel(card.dataset.id));
   });
 }
 
@@ -220,6 +221,77 @@ function populateEditorSelect(editors) {
     const opt = document.createElement('option');
     opt.value = e.id; opt.textContent = e.name;
     sel.appendChild(opt);
+  });
+}
+
+// ── Task Detail Panel ──────────────────────
+let _panelTaskId = null;
+
+function openTaskPanel(id) {
+  const t = allTasks.find(t => t.id === id);
+  if (!t) return;
+  _panelTaskId = id;
+
+  document.getElementById('panel-task-id').textContent   = t.task_id || '';
+  document.getElementById('panel-task-name').textContent = t.title   || '—';
+
+  const editorName     = t.editors?.name || '—';
+  const pendingReview  = !t.quality_rating && !t.speed_rating;
+
+  document.getElementById('task-panel-content').innerHTML = `
+    <div class="task-detail-section">
+      <div class="task-detail-row"><span class="task-detail-label">Status</span><span class="task-detail-value">${statusBadge(t.status)}</span></div>
+      <div class="task-detail-row"><span class="task-detail-label">Priority</span><span class="task-detail-value">${priorityBadge(t.priority)}</span></div>
+    </div>
+    <div class="task-detail-section">
+      <div class="task-detail-row"><span class="task-detail-label">Editor</span><span class="task-detail-value">${editorName}</span></div>
+      <div class="task-detail-row"><span class="task-detail-label">Client</span><span class="task-detail-value">${clientBadge(t.client)}</span></div>
+    </div>
+    <div class="task-detail-section">
+      <div class="task-detail-row"><span class="task-detail-label">Format</span><span class="task-detail-value">${t.format || '—'}</span></div>
+      <div class="task-detail-row"><span class="task-detail-label">Duration</span><span class="task-detail-value">${t.duration || '—'}</span></div>
+    </div>
+    <div class="task-detail-section">
+      <div class="task-detail-row"><span class="task-detail-label">Date Assigned</span><span class="task-detail-value">${t.date_assigned ? formatDate(t.date_assigned) : '—'}</span></div>
+      <div class="task-detail-row"><span class="task-detail-label">Due Date</span><span class="task-detail-value">${t.due_date ? formatDate(t.due_date) : '—'}</span></div>
+    </div>
+    <div class="task-detail-section">
+      <div class="task-detail-row"><span class="task-detail-label">Task Points</span><span class="task-detail-value">${t.task_points ?? '—'}</span></div>
+      <div class="task-detail-row"><span class="task-detail-label">Revisions</span><span class="task-detail-value">${t.revisions ?? '—'}</span></div>
+    </div>
+    <div class="task-detail-section">
+      ${pendingReview
+        ? `<div class="task-detail-row" style="grid-column:1/-1"><span class="task-detail-label">Ratings</span><span class="task-detail-value"><span class="badge badge-pending">Pending Review</span></span></div>`
+        : `<div class="task-detail-row"><span class="task-detail-label">Quality</span><span class="task-detail-value">${t.quality_rating ?? '—'}/5</span></div>
+           <div class="task-detail-row"><span class="task-detail-label">Speed</span><span class="task-detail-value">${t.speed_rating ?? '—'}/5</span></div>`
+      }
+    </div>
+    ${t.brief ? `
+    <div class="task-detail-section task-detail-section--full" style="border-bottom:none">
+      <div class="task-detail-row"><span class="task-detail-label">Brief</span><div class="task-detail-brief">${t.brief.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>
+    </div>` : ''}
+    ${t.finished_product_url ? `
+    <div class="task-detail-section task-detail-section--full" style="border-bottom:none;padding-top:8px">
+      <div class="task-detail-row"><span class="task-detail-label">Finished Product</span><span class="task-detail-value"><a href="${t.finished_product_url}" target="_blank" style="color:var(--accent)">View</a></span></div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('task-panel').classList.remove('hidden');
+  document.getElementById('task-panel-overlay').classList.remove('hidden');
+}
+
+function closeTaskPanel() {
+  document.getElementById('task-panel').classList.add('hidden');
+  document.getElementById('task-panel-overlay').classList.add('hidden');
+  _panelTaskId = null;
+}
+
+function bindTaskPanel() {
+  document.getElementById('btn-close-task-panel').addEventListener('click', closeTaskPanel);
+  document.getElementById('task-panel-overlay').addEventListener('click', closeTaskPanel);
+  document.getElementById('btn-edit-task-panel').addEventListener('click', () => {
+    closeTaskPanel();
+    openEditModal(_panelTaskId);
   });
 }
 
