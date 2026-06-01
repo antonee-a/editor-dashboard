@@ -165,7 +165,7 @@ function taskCard(t) {
       <span class="task-card-editor">${editorName}</span>
       <span class="task-card-due ${isOverdue ? 'overdue' : ''}">Due ${dueLabel}</span>
     </div>
-    ${t.brief ? `<button class="btn-brief" data-brief-id="${t.id}">View Brief</button>` : ''}
+    ${t.brief_url ? `<button class="btn-brief" data-brief-id="${t.id}">View Brief</button>` : ''}
   </div>`;
 }
 
@@ -235,10 +235,10 @@ function populateEditorSelect(editors) {
 // ── Brief Modal ────────────────────────────
 function openBriefModal(id) {
   const t = allTasks.find(t => t.id === id);
-  if (!t || !t.brief) return;
+  if (!t || !t.brief_url) return;
 
   document.getElementById('brief-modal-title').textContent = `${t.task_id} — ${t.title}`;
-  document.getElementById('brief-modal-body').textContent = t.brief;
+  document.getElementById('brief-modal-body').textContent = t.brief_url;
 
   document.getElementById('brief-modal').classList.remove('hidden');
   document.getElementById('brief-modal-overlay').classList.remove('hidden');
@@ -296,9 +296,9 @@ function openTaskPanel(id) {
            <div class="task-detail-row"><span class="task-detail-label">Speed</span><span class="task-detail-value">${t.speed_rating ?? '—'}/5</span></div>`
       }
     </div>
-    ${t.brief ? `
+    ${t.brief_url ? `
     <div class="task-detail-section task-detail-section--full" style="border-bottom:none">
-      <div class="task-detail-row"><span class="task-detail-label">Brief</span><div class="task-detail-brief">${t.brief.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>
+      <div class="task-detail-row"><span class="task-detail-label">Brief</span><div class="task-detail-brief">${t.brief_url.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>
     </div>` : ''}
     ${t.finished_product_url ? `
     <div class="task-detail-section task-detail-section--full" style="border-bottom:none;padding-top:8px">
@@ -359,7 +359,7 @@ async function openEditModal(id) {
   document.getElementById('f-date-assigned').value = task.date_assigned || '';
   document.getElementById('f-due-date').value      = task.due_date || '';
   document.getElementById('f-revisions').value     = task.revisions ?? 0;
-  document.getElementById('f-brief').value         = task.brief || '';
+  document.getElementById('f-brief').value         = task.brief_url || '';
   document.getElementById('f-finished-url').value  = task.finished_product_url || '';
   showModal();
 }
@@ -380,7 +380,7 @@ async function handleSubmit(e) {
     date_assigned:         document.getElementById('f-date-assigned').value || null,
     due_date:              document.getElementById('f-due-date').value  || null,
     revisions:             numOrNull('f-revisions') ?? 0,
-    brief:                 document.getElementById('f-brief').value  || null,
+    brief_url:             document.getElementById('f-brief').value  || null,
     finished_product_url:  document.getElementById('f-finished-url').value || null,
   };
 
