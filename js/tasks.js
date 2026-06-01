@@ -12,6 +12,7 @@ async function init() {
   bindFilters();
   bindModal();
   bindTaskPanel();
+  bindBriefModal();
   bindAddClientButtons();
 }
 
@@ -120,6 +121,12 @@ function renderTasks(tasks) {
   grid.querySelectorAll('.task-card').forEach(card => {
     card.addEventListener('click', () => openTaskPanel(card.dataset.id));
   });
+  grid.querySelectorAll('.btn-brief').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openBriefModal(btn.dataset.briefId);
+    });
+  });
 }
 
 function taskCard(t) {
@@ -158,6 +165,7 @@ function taskCard(t) {
       <span class="task-card-editor">${editorName}</span>
       <span class="task-card-due ${isOverdue ? 'overdue' : ''}">Due ${dueLabel}</span>
     </div>
+    ${t.brief ? `<button class="btn-brief" data-brief-id="${t.id}">View Brief</button>` : ''}
   </div>`;
 }
 
@@ -222,6 +230,28 @@ function populateEditorSelect(editors) {
     opt.value = e.id; opt.textContent = e.name;
     sel.appendChild(opt);
   });
+}
+
+// ── Brief Modal ────────────────────────────
+function openBriefModal(id) {
+  const t = allTasks.find(t => t.id === id);
+  if (!t || !t.brief) return;
+
+  document.getElementById('brief-modal-title').textContent = `${t.task_id} — ${t.title}`;
+  document.getElementById('brief-modal-body').textContent = t.brief;
+
+  document.getElementById('brief-modal').classList.remove('hidden');
+  document.getElementById('brief-modal-overlay').classList.remove('hidden');
+}
+
+function closeBriefModal() {
+  document.getElementById('brief-modal').classList.add('hidden');
+  document.getElementById('brief-modal-overlay').classList.add('hidden');
+}
+
+function bindBriefModal() {
+  document.getElementById('btn-close-brief-modal').addEventListener('click', closeBriefModal);
+  document.getElementById('brief-modal-overlay').addEventListener('click', closeBriefModal);
 }
 
 // ── Task Detail Panel ──────────────────────
