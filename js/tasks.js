@@ -309,8 +309,9 @@ function bindTaskPanel() {
   document.getElementById('btn-close-task-panel').addEventListener('click', closeTaskPanel);
   document.getElementById('task-panel-overlay').addEventListener('click', closeTaskPanel);
   document.getElementById('btn-edit-task-panel').addEventListener('click', () => {
+    const id = _panelTaskId;
     closeTaskPanel();
-    openEditModal(_panelTaskId);
+    openEditModal(id);
   });
 }
 
