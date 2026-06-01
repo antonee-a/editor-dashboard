@@ -246,7 +246,7 @@ function bindBriefModal() {
 // ── Task Detail Panel ──────────────────────
 let _panelTaskId = null;
 
-function openTaskPanel(id) {
+async function openTaskPanel(id) {
   const t = allTasks.find(t => t.id === id);
   if (!t) return;
   _panelTaskId = id;
@@ -254,8 +254,8 @@ function openTaskPanel(id) {
   document.getElementById('panel-task-id').textContent   = t.task_id || '';
   document.getElementById('panel-task-name').textContent = t.title   || '—';
 
-  const editorName     = t.editors?.name || '—';
-  const pendingReview  = !t.quality_rating && !t.speed_rating;
+  const editorName    = t.editors?.name || '—';
+  const pendingReview = !t.quality_rating && !t.speed_rating;
 
   document.getElementById('task-panel-content').innerHTML = `
     <div class="task-detail-section">
@@ -290,13 +290,67 @@ function openTaskPanel(id) {
       <div class="task-detail-row"><span class="task-detail-label">Brief</span><div class="task-detail-brief">${t.brief_url.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>
     </div>` : ''}
     ${t.finished_product_url ? `
-    <div class="task-detail-section task-detail-section--full" style="border-bottom:none;padding-top:8px">
+    <div class="task-detail-section task-detail-section--full" style="padding-top:8px">
       <div class="task-detail-row"><span class="task-detail-label">Finished Product</span><span class="task-detail-value"><a href="${t.finished_product_url}" target="_blank" style="color:var(--accent)">View</a></span></div>
     </div>` : ''}
+    <div id="feedback-section"></div>
   `;
 
   document.getElementById('task-panel').classList.remove('hidden');
   document.getElementById('task-panel-overlay').classList.remove('hidden');
+
+  await renderFeedbackSection(id);
+}
+
+// ── Feedback ───────────────────────────────
+async function renderFeedbackSection(taskId) {
+  const { data: items } = await db.from('feedback')
+    .select('*').eq('task_id', taskId).order('created_at', { ascending: true });
+
+  const list = items || [];
+  const hasFeedback = list.length > 0;
+
+  const statusBadgeHtml = hasFeedback
+    ? `<span class="badge badge-feedback-received">Feedback Received</span>`
+    : `<span class="badge badge-feedback-pending">Feedback Pending</span>`;
+
+  const entriesHtml = list.map(f => `
+    <div class="feedback-entry">
+      <div class="feedback-entry-header">
+        <span class="feedback-author">${f.author}</span>
+        <span class="feedback-date">${new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <div class="feedback-content">${f.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('feedback-section').innerHTML = `
+    <div class="feedback-section">
+      <div class="feedback-section-header">
+        <span class="task-detail-label">Feedback Loop</span>
+        ${statusBadgeHtml}
+      </div>
+      <div class="feedback-thread">
+        ${hasFeedback ? entriesHtml : '<div class="feedback-empty">No feedback yet.</div>'}
+      </div>
+      <form class="feedback-form" id="feedback-form">
+        <input type="text" id="fb-author" placeholder="Your name" required style="background:var(--bg-3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;width:100%" />
+        <textarea id="fb-content" placeholder="Leave your feedback…" required rows="3" style="background:var(--bg-3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;width:100%;resize:vertical;font-family:inherit"></textarea>
+        <button type="submit" class="btn-primary" style="width:100%;font-size:12px;padding:8px 0">Submit Feedback</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('feedback-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const author  = document.getElementById('fb-author').value.trim();
+    const content = document.getElementById('fb-content').value.trim();
+    if (!author || !content) return;
+
+    const { error } = await db.from('feedback').insert({ task_id: taskId, author, content });
+    if (error) { alert('Error submitting feedback: ' + error.message); return; }
+    await renderFeedbackSection(taskId);
+  });
 }
 
 function closeTaskPanel() {
