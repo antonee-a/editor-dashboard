@@ -149,18 +149,7 @@ function taskCard(t) {
     <div class="task-card-title">${t.title}</div>
     <div class="task-card-meta">
       ${clientBadge(t.client)}
-      ${t.format  ? `<span class="badge" style="background:var(--bg-3);color:var(--text-muted)">${t.format}</span>` : ''}
-      ${t.duration ? `<span class="badge" style="background:var(--bg-3);color:var(--text-muted)">${t.duration}</span>` : ''}
-      ${t.task_points != null ? `<span class="points-badge">${t.task_points}</span>` : ''}
     </div>
-    ${pendingReview
-      ? `<div class="task-ratings"><span class="badge badge-pending">Pending Review</span></div>`
-      : `<div class="task-ratings">
-           <span class="rating-block">Quality <span>${t.quality_rating ?? '—'}/5</span></span>
-           <span class="rating-block">Speed <span>${t.speed_rating ?? '—'}/5</span></span>
-           ${t.revisions ? `<span class="rating-block">Revisions <span>${t.revisions}</span></span>` : ''}
-         </div>`
-    }
     <div class="task-card-footer">
       <span class="task-card-editor">${editorName}</span>
       <span class="task-card-due ${isOverdue ? 'overdue' : ''}">Due ${dueLabel}</span>
