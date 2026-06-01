@@ -324,6 +324,12 @@ html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; backgrou
 .task-detail-value { font-size: 13px; color: var(--text); }
 .task-detail-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
 .task-detail-section--full { grid-template-columns: 1fr; }
+.brief-toggle { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+.brief-toggle:hover .brief-toggle-btn { color: var(--accent); }
+.brief-toggle-btn { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+.brief-collapsed { display: none; }
+
 .task-detail-brief { background: var(--bg-3); border-radius: var(--radius); padding: 14px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; max-height: 400px; overflow-y: auto; }
 
 .points-badge {

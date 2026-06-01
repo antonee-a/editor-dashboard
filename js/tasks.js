@@ -286,8 +286,12 @@ async function openTaskPanel(id) {
       }
     </div>
     ${t.brief_url ? `
-    <div class="task-detail-section task-detail-section--full" style="border-bottom:none">
-      <div class="task-detail-row"><span class="task-detail-label">Brief</span><div class="task-detail-brief">${t.brief_url.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>
+    <div class="task-detail-section task-detail-section--full">
+      <div class="brief-toggle" id="brief-toggle">
+        <span class="task-detail-label">Brief</span>
+        <span class="brief-toggle-btn">Show ▾</span>
+      </div>
+      <div class="task-detail-brief brief-collapsed" id="brief-body">${t.brief_url.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
     </div>` : ''}
     ${t.finished_product_url ? `
     <div class="task-detail-section task-detail-section--full" style="padding-top:8px">
@@ -298,6 +302,16 @@ async function openTaskPanel(id) {
 
   document.getElementById('task-panel').classList.remove('hidden');
   document.getElementById('task-panel-overlay').classList.remove('hidden');
+
+  const briefToggle = document.getElementById('brief-toggle');
+  if (briefToggle) {
+    briefToggle.addEventListener('click', () => {
+      const body = document.getElementById('brief-body');
+      const btn  = briefToggle.querySelector('.brief-toggle-btn');
+      const open = body.classList.toggle('brief-collapsed');
+      btn.textContent = open ? 'Show ▾' : 'Hide ▴';
+    });
+  }
 
   await renderFeedbackSection(id);
 }
