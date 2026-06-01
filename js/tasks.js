@@ -238,7 +238,7 @@ function openBriefModal(id) {
   if (!t || !t.brief_url) return;
 
   document.getElementById('brief-modal-title').textContent = `${t.task_id} — ${t.title}`;
-  document.getElementById('brief-modal-body').textContent = t.brief_url;
+  document.getElementById('brief-modal-body').innerHTML = marked.parse(t.brief_url);
 
   document.getElementById('brief-modal').classList.remove('hidden');
   document.getElementById('brief-modal-overlay').classList.remove('hidden');

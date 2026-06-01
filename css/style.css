@@ -273,15 +273,32 @@ html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; backgrou
 }
 .btn-brief:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-.modal-box--brief { width: 700px; max-width: 95vw; }
+.modal-box--brief { width: 740px; max-width: 95vw; }
 
 .brief-modal-body {
-  white-space: pre-wrap; word-break: break-word;
-  font-family: inherit; font-size: 13px; line-height: 1.75;
-  color: var(--text); background: var(--bg-3);
-  border-radius: var(--radius); padding: 18px;
-  max-height: 65vh; overflow-y: auto;
+  background: var(--bg-3); border-radius: var(--radius);
+  padding: 20px 24px; max-height: 68vh; overflow-y: auto;
+  font-size: 13px; line-height: 1.75; color: var(--text);
+  word-break: break-word;
 }
+
+/* Markdown elements inside brief modal */
+.brief-modal-body h1 { font-size: 17px; font-weight: 700; margin: 0 0 12px; color: var(--text); }
+.brief-modal-body h2 { font-size: 14px; font-weight: 700; margin: 20px 0 8px; color: var(--text); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.brief-modal-body h3 { font-size: 13px; font-weight: 700; margin: 16px 0 6px; color: var(--accent); }
+.brief-modal-body p { margin: 0 0 10px; }
+.brief-modal-body ul, .brief-modal-body ol { margin: 0 0 10px; padding-left: 20px; }
+.brief-modal-body li { margin-bottom: 4px; }
+.brief-modal-body strong { color: var(--text); font-weight: 700; }
+.brief-modal-body em { color: var(--text-muted); }
+.brief-modal-body hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.brief-modal-body blockquote { border-left: 3px solid var(--accent); margin: 10px 0; padding: 8px 14px; background: var(--bg-2); border-radius: 0 var(--radius) var(--radius) 0; color: var(--text); font-style: italic; }
+.brief-modal-body code { background: var(--bg-2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; font-family: monospace; color: #7dd3fc; }
+.brief-modal-body pre { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; overflow-x: auto; margin: 10px 0; }
+.brief-modal-body pre code { background: none; border: none; padding: 0; font-size: 12px; color: #7dd3fc; white-space: pre-wrap; word-break: break-word; }
+.brief-modal-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.brief-modal-body th { background: var(--bg-2); padding: 8px 12px; text-align: left; font-weight: 600; border: 1px solid var(--border); color: var(--text-muted); }
+.brief-modal-body td { padding: 8px 12px; border: 1px solid var(--border); }
 
 /* ── Task Detail Panel ────────────────────── */
 .task-detail-row { display: flex; flex-direction: column; gap: 4px; }
