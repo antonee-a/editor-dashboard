@@ -107,77 +107,7 @@ async function loadTasks() {
 
   if (error) { console.error(error); return; }
   allTasks = data || [];
-  renderTopSections(allTasks);
   renderTasks(applyFilters(allTasks));
-}
-
-// ── Top Sections (stats + approval queue + blocked) ──
-function renderTopSections(tasks) {
-  const today      = new Date().toISOString().slice(0, 10);
-  const active     = tasks.filter(t => t.status !== 'Completed');
-  const approval   = tasks.filter(t => t.status === 'Ready');
-  const blocked    = tasks.filter(t => t.status === 'Blocked');
-  const overdue    = active.filter(t => t.due_date && t.due_date < today);
-
-  // Stats row
-  const statsRow = document.getElementById('task-stats-row');
-  if (statsRow) {
-    statsRow.innerHTML = `
-      <div class="task-stat-card task-stat-card--approval" data-filter-status="Ready">
-        <span class="task-stat-num">${approval.length}</span>
-        <span class="task-stat-label">Pending Approval</span>
-      </div>
-      <div class="task-stat-card task-stat-card--blocked" data-filter-status="Blocked">
-        <span class="task-stat-num">${blocked.length}</span>
-        <span class="task-stat-label">Blocked</span>
-      </div>
-      <div class="task-stat-card task-stat-card--overdue">
-        <span class="task-stat-num">${overdue.length}</span>
-        <span class="task-stat-label">Overdue</span>
-      </div>
-      <div class="task-stat-card">
-        <span class="task-stat-num">${active.length}</span>
-        <span class="task-stat-label">Total Active</span>
-      </div>`;
-
-    statsRow.querySelectorAll('[data-filter-status]').forEach(card => {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', () => {
-        document.getElementById('filter-status').value = card.dataset.filterStatus;
-        renderTasks(applyFilters(allTasks));
-      });
-    });
-  }
-
-  // Approval queue
-  const aqSection = document.getElementById('approval-queue');
-  const aqGrid    = document.getElementById('approval-queue-grid');
-  const aqCount   = document.getElementById('approval-queue-count');
-  if (aqSection && aqGrid) {
-    if (approval.length) {
-      aqCount.textContent = approval.length;
-      aqGrid.innerHTML = approval.map(taskCard).join('');
-      bindGridCards(aqGrid);
-      aqSection.style.display = '';
-    } else {
-      aqSection.style.display = 'none';
-    }
-  }
-
-  // Blocked
-  const blSection = document.getElementById('blocked-section');
-  const blGrid    = document.getElementById('blocked-section-grid');
-  const blCount   = document.getElementById('blocked-section-count');
-  if (blSection && blGrid) {
-    if (blocked.length) {
-      blCount.textContent = blocked.length;
-      blGrid.innerHTML = blocked.map(taskCard).join('');
-      bindGridCards(blGrid);
-      blSection.style.display = '';
-    } else {
-      blSection.style.display = 'none';
-    }
-  }
 }
 
 function bindGridCards(grid) {
