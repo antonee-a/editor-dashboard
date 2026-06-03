@@ -153,7 +153,8 @@ function taskCard(t) {
   <div class="task-card" data-id="${t.id}">
     <div class="task-card-top">
       <span class="task-id">${t.task_id}</span>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;align-items:center">
+        ${t.task_points != null ? `<span class="points-badge-card">${t.task_points}pt</span>` : ''}
         ${statusBadge(t.status)}
         ${priorityBadge(t.priority)}
       </div>
@@ -422,6 +423,7 @@ function bindModal() {
   document.getElementById('btn-cancel-task').addEventListener('click', closeModal);
   document.getElementById('task-modal-overlay').addEventListener('click', closeModal);
   document.getElementById('task-form').addEventListener('submit', handleSubmit);
+  bindPointsCalc();
 }
 
 function openAddModal() {
@@ -429,6 +431,11 @@ function openAddModal() {
   document.getElementById('task-id-hidden').value = '';
   document.getElementById('task-form').reset();
   document.getElementById('f-date-assigned').value = today();
+  document.getElementById('f-scene-complexity').value = 'Medium';
+  document.getElementById('f-mod-captions').checked   = false;
+  document.getElementById('f-mod-multiformat').checked = false;
+  document.getElementById('f-mod-vo').checked          = false;
+  updatePointsDisplay();
   showModal();
 }
 
@@ -448,15 +455,22 @@ async function openEditModal(id) {
   document.getElementById('f-points').value        = task.task_points ?? '';
   document.getElementById('f-date-assigned').value = task.date_assigned || '';
   document.getElementById('f-due-date').value      = task.due_date || '';
-  document.getElementById('f-revisions').value     = task.revisions ?? 0;
-  document.getElementById('f-brief').value         = task.brief_url || '';
-  document.getElementById('f-finished-url').value  = task.finished_product_url || '';
+  document.getElementById('f-revisions').value          = task.revisions ?? 0;
+  document.getElementById('f-brief').value               = task.brief_url || '';
+  document.getElementById('f-finished-url').value        = task.finished_product_url || '';
+  document.getElementById('f-scene-complexity').value    = task.scene_complexity || 'Medium';
+  document.getElementById('f-mod-captions').checked      = task.has_captions   || false;
+  document.getElementById('f-mod-multiformat').checked   = task.multi_format   || false;
+  document.getElementById('f-mod-vo').checked            = task.has_vo_sync    || false;
+  updatePointsDisplay();
   showModal();
 }
 
 async function handleSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('task-id-hidden').value;
+  const existingTask = id ? allTasks.find(t => t.id === id) : null;
+  const newStatus    = document.getElementById('f-status').value;
 
   const payload = {
     title:                 document.getElementById('f-title').value,
@@ -464,7 +478,7 @@ async function handleSubmit(e) {
     duration:              document.getElementById('f-duration').value || null,
     format:                document.getElementById('f-format').value   || null,
     priority:              document.getElementById('f-priority').value,
-    status:                document.getElementById('f-status').value,
+    status:                newStatus,
     assigned_to:           document.getElementById('f-assigned').value || null,
     task_points:           numOrNull('f-points'),
     date_assigned:         document.getElementById('f-date-assigned').value || null,
@@ -472,6 +486,13 @@ async function handleSubmit(e) {
     revisions:             numOrNull('f-revisions') ?? 0,
     brief_url:             document.getElementById('f-brief').value  || null,
     finished_product_url:  document.getElementById('f-finished-url').value || null,
+    scene_complexity:      document.getElementById('f-scene-complexity').value || 'Medium',
+    has_captions:          document.getElementById('f-mod-captions').checked,
+    multi_format:          document.getElementById('f-mod-multiformat').checked,
+    has_vo_sync:           document.getElementById('f-mod-vo').checked,
+    completed_at:          newStatus === 'Completed'
+                             ? (existingTask?.completed_at || today())
+                             : null,
   };
 
   const { error } = id
@@ -490,6 +511,58 @@ function showModal() {
 function closeModal() {
   document.getElementById('task-modal').classList.add('hidden');
   document.getElementById('task-modal-overlay').classList.add('hidden');
+}
+
+// ── Point Calculation ──────────────────────
+const POINT_BASE = {
+  'AI Cinematic':   4,
+  'Green Screen':   3,
+  'Clone / Avatar': 3,
+  'Reaction Edit':  2,
+  'UGC':            2,
+  'Real Person':    2,
+  'Mixed':          5,
+};
+const POINT_DURATION = { '15s': 0, '30s': 1, '60s': 2, '90s': 3, 'Other': 1 };
+const POINT_SCENE    = { 'Simple': 0, 'Medium': 1, 'Complex': 2 };
+
+function calcPoints(format, duration, sceneComplexity, hasCaptions, multiFormat, hasVoSync) {
+  if (!format) return null;
+  let pts = (POINT_BASE[format] ?? 2)
+          + (POINT_DURATION[duration] ?? 0)
+          + (POINT_SCENE[sceneComplexity] ?? 1);
+  if (hasCaptions) pts += 0.5;
+  if (multiFormat)  pts += 1;
+  if (hasVoSync)    pts += 1;
+  return Math.round(pts * 2) / 2; // nearest 0.5
+}
+
+function updatePointsDisplay() {
+  const format   = document.getElementById('f-format').value;
+  const duration = document.getElementById('f-duration').value;
+  const scene    = document.getElementById('f-scene-complexity').value || 'Medium';
+  const captions = document.getElementById('f-mod-captions').checked;
+  const multi    = document.getElementById('f-mod-multiformat').checked;
+  const vo       = document.getElementById('f-mod-vo').checked;
+
+  const pts = calcPoints(format, duration, scene, captions, multi, vo);
+  const display = document.getElementById('f-points-display');
+  const hidden  = document.getElementById('f-points');
+  if (pts === null) {
+    display.textContent = '—';
+    hidden.value = '';
+  } else {
+    display.textContent = pts;
+    hidden.value = pts;
+  }
+}
+
+function bindPointsCalc() {
+  ['f-format','f-duration','f-scene-complexity','f-mod-captions','f-mod-multiformat','f-mod-vo']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', updatePointsDisplay);
+    });
 }
 
 // ── Helpers ────────────────────────────────

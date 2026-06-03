@@ -31,16 +31,20 @@ function bindRangeButtons() {
 async function loadAnalytics() {
   const start = rangeStart(currentRange);
 
-  let query = db.from('tasks').select('*, editors(name)');
+  let query = db.from('tasks').select('*, editors(name, speed_tier)');
   if (start) query = query.gte('date_assigned', start);
-  const { data: tasks } = await query;
+
+  const [{ data: tasks }, { data: editors }] = await Promise.all([
+    query,
+    db.from('editors').select('id, name, speed_tier'),
+  ]);
   if (!tasks) return;
 
   renderStats(tasks);
   renderTrendChart(tasks);
   renderFormatChart(tasks);
   renderClientChart(tasks);
-  renderVelocityTable(tasks);
+  renderVelocityTable(tasks, editors || []);
 }
 
 // ── Stats Row ──────────────────────────────
@@ -118,11 +122,30 @@ function renderClientChart(tasks) {
   });
 }
 
-// ── Velocity Table ─────────────────────────
-function renderVelocityTable(tasks) {
-  const completed = tasks.filter(t => t.status === 'Completed');
+// ── Velocity Helpers ───────────────────────
+const TIER_BASELINE = { Onboarding: 8, Standard: 15, Fast: 22, Elite: 30 };
 
-  // Group by editor
+function velocityGrade(ptsPerDay, baseline) {
+  if (!baseline || !ptsPerDay) return { label: '—', color: 'var(--text-muted)' };
+  const ratio = ptsPerDay / baseline;
+  if (ratio >= 1.2) return { label: 'Excellent',      color: '#22c55e' };
+  if (ratio >= 1.0) return { label: 'Fast',           color: '#3b82f6' };
+  if (ratio >= 0.8) return { label: 'On Track',       color: '#a5a0ff' };
+  if (ratio >= 0.6) return { label: 'Slow',           color: '#f59e0b' };
+  return                  { label: 'Not Performing',  color: '#ef4444' };
+}
+
+// ── Velocity Table ─────────────────────────
+function renderVelocityTable(tasks, editors) {
+  const completed = tasks.filter(t => t.status === 'Completed');
+  const tbody = document.getElementById('velocity-tbody');
+
+  if (!completed.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="loading">No completed tasks in this range.</td></tr>';
+    return;
+  }
+
+  // Group by editor name
   const editorMap = {};
   completed.forEach(t => {
     const name = t.editors?.name || 'Unassigned';
@@ -130,37 +153,33 @@ function renderVelocityTable(tasks) {
     editorMap[name].push(t);
   });
 
-  // Get current speed tiers
-  const tbody = document.getElementById('velocity-tbody');
-
-  if (!Object.keys(editorMap).length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="loading">No completed tasks in this range.</td></tr>';
-    return;
-  }
+  const start = rangeStart(currentRange);
+  const days  = start ? Math.max(1, Math.round((Date.now() - new Date(start)) / 86400000)) : 30;
 
   const rows = Object.entries(editorMap).map(([name, items]) => {
+    const totalPts     = items.reduce((sum, t) => sum + (t.task_points || 0), 0);
+    const ptsPerDay    = totalPts / days;
     const avgRevisions = avg(items.map(t => t.revisions ?? 0));
     const avgQuality   = avg(items.filter(t => t.quality_rating).map(t => t.quality_rating));
     const avgSpeed     = avg(items.filter(t => t.speed_rating).map(t => t.speed_rating));
     const reliability  = reliabilityPct(items);
 
-    // Days in range
-    const start = rangeStart(currentRange);
-    const days  = start ? Math.max(1, Math.round((Date.now() - new Date(start)) / 86400000)) : 30;
-    const perDay = (items.length / days).toFixed(2);
-
-    // Get speed tier from last task's editor data (approximate — real source is editors table)
-    const tier = '—';
+    const editorRecord = editors.find(e => e.name === name);
+    const tier         = editorRecord?.speed_tier || '—';
+    const baseline     = TIER_BASELINE[tier] || null;
+    const grade        = velocityGrade(ptsPerDay, baseline);
 
     return `<tr>
       <td style="font-weight:600">${name}</td>
       <td>${items.length}</td>
+      <td style="font-weight:700">${totalPts}</td>
+      <td style="font-weight:700;color:${grade.color}">${ptsPerDay.toFixed(1)}</td>
       <td>${avgRevisions.toFixed(1)}</td>
       <td>${avgQuality ? avgQuality.toFixed(1) : '—'}</td>
       <td>${avgSpeed   ? avgSpeed.toFixed(1)   : '—'}</td>
-      <td>${perDay}</td>
       <td>${reliability}%</td>
-      <td>—</td>
+      <td><span style="font-weight:700;color:${grade.color}">${grade.label}</span></td>
+      <td>${tier !== '—' ? `<span class="badge badge-tier-${tier.toLowerCase()}">${tier}</span>` : '—'}</td>
     </tr>`;
   });
 
