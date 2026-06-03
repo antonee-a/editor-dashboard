@@ -107,7 +107,97 @@ async function loadTasks() {
 
   if (error) { console.error(error); return; }
   allTasks = data || [];
+  renderTopSections(allTasks);
   renderTasks(applyFilters(allTasks));
+}
+
+// ── Top Sections (stats + approval queue + blocked) ──
+function renderTopSections(tasks) {
+  const today      = new Date().toISOString().slice(0, 10);
+  const active     = tasks.filter(t => t.status !== 'Completed');
+  const approval   = tasks.filter(t => t.status === 'Ready');
+  const blocked    = tasks.filter(t => t.status === 'Blocked');
+  const overdue    = active.filter(t => t.due_date && t.due_date < today);
+
+  // Stats row
+  const statsRow = document.getElementById('task-stats-row');
+  if (statsRow) {
+    statsRow.innerHTML = `
+      <div class="task-stat-card task-stat-card--approval" data-filter-status="Ready">
+        <span class="task-stat-num">${approval.length}</span>
+        <span class="task-stat-label">Pending Approval</span>
+      </div>
+      <div class="task-stat-card task-stat-card--blocked" data-filter-status="Blocked">
+        <span class="task-stat-num">${blocked.length}</span>
+        <span class="task-stat-label">Blocked</span>
+      </div>
+      <div class="task-stat-card task-stat-card--overdue">
+        <span class="task-stat-num">${overdue.length}</span>
+        <span class="task-stat-label">Overdue</span>
+      </div>
+      <div class="task-stat-card">
+        <span class="task-stat-num">${active.length}</span>
+        <span class="task-stat-label">Total Active</span>
+      </div>`;
+
+    statsRow.querySelectorAll('[data-filter-status]').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        document.getElementById('filter-status').value = card.dataset.filterStatus;
+        renderTasks(applyFilters(allTasks));
+      });
+    });
+  }
+
+  // Approval queue
+  const aqSection = document.getElementById('approval-queue');
+  const aqGrid    = document.getElementById('approval-queue-grid');
+  const aqCount   = document.getElementById('approval-queue-count');
+  if (aqSection && aqGrid) {
+    if (approval.length) {
+      aqCount.textContent = approval.length;
+      aqGrid.innerHTML = approval.map(taskCard).join('');
+      bindGridCards(aqGrid);
+      aqSection.style.display = '';
+    } else {
+      aqSection.style.display = 'none';
+    }
+  }
+
+  // Blocked
+  const blSection = document.getElementById('blocked-section');
+  const blGrid    = document.getElementById('blocked-section-grid');
+  const blCount   = document.getElementById('blocked-section-count');
+  if (blSection && blGrid) {
+    if (blocked.length) {
+      blCount.textContent = blocked.length;
+      blGrid.innerHTML = blocked.map(taskCard).join('');
+      bindGridCards(blGrid);
+      blSection.style.display = '';
+    } else {
+      blSection.style.display = 'none';
+    }
+  }
+}
+
+function bindGridCards(grid) {
+  grid.querySelectorAll('.task-card').forEach(card => {
+    card.addEventListener('click', () => openTaskPanel(card.dataset.id));
+  });
+  grid.querySelectorAll('.btn-view-brief').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openBriefModal(btn.dataset.briefId); });
+  });
+  grid.querySelectorAll('.btn-copy-brief-card').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const t = allTasks.find(t => t.id === btn.dataset.taskId);
+      if (!t?.brief_url) return;
+      navigator.clipboard.writeText(t.brief_url).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy Brief'; }, 1500);
+      });
+    });
+  });
 }
 
 // ── Render ─────────────────────────────────
@@ -118,15 +208,7 @@ function renderTasks(tasks) {
     return;
   }
   grid.innerHTML = tasks.map(taskCard).join('');
-  grid.querySelectorAll('.task-card').forEach(card => {
-    card.addEventListener('click', () => openTaskPanel(card.dataset.id));
-  });
-  grid.querySelectorAll('.btn-brief').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      openBriefModal(btn.dataset.briefId);
-    });
-  });
+  bindGridCards(grid);
 }
 
 function taskCard(t) {
@@ -154,7 +236,10 @@ function taskCard(t) {
       <span class="task-card-editor">${editorName}</span>
       <span class="task-card-due ${isOverdue ? 'overdue' : ''}">Due ${dueLabel}</span>
     </div>
-    ${t.brief_url ? `<button class="btn-brief" data-brief-id="${t.id}">View Brief</button>` : ''}
+    ${t.brief_url ? `<div style="display:flex;gap:6px;margin-top:6px">
+      <button class="btn-brief btn-view-brief" data-brief-id="${t.id}" style="flex:1">View Brief</button>
+      <button class="btn-brief btn-copy-brief-card" data-task-id="${t.id}" style="flex:1">Copy Brief</button>
+    </div>` : ''}
   </div>`;
 }
 
@@ -289,7 +374,10 @@ async function openTaskPanel(id) {
     <div class="task-detail-section task-detail-section--full">
       <div class="brief-toggle" id="brief-toggle">
         <span class="task-detail-label">Brief</span>
-        <span class="brief-toggle-btn">Show ▾</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-brief btn-copy-brief-panel" data-task-id="${t.id}" style="padding:3px 10px;font-size:11px">Copy Brief</button>
+          <span class="brief-toggle-btn">Show ▾</span>
+        </div>
       </div>
       <div class="task-detail-brief brief-collapsed" id="brief-body">${t.brief_url.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
     </div>` : ''}
@@ -305,11 +393,25 @@ async function openTaskPanel(id) {
 
   const briefToggle = document.getElementById('brief-toggle');
   if (briefToggle) {
-    briefToggle.addEventListener('click', () => {
+    briefToggle.addEventListener('click', e => {
+      if (e.target.closest('.btn-copy-brief-panel')) return;
       const body = document.getElementById('brief-body');
       const btn  = briefToggle.querySelector('.brief-toggle-btn');
       const open = body.classList.toggle('brief-collapsed');
       btn.textContent = open ? 'Show ▾' : 'Hide ▴';
+    });
+  }
+
+  const copyBriefPanel = document.querySelector('.btn-copy-brief-panel');
+  if (copyBriefPanel) {
+    copyBriefPanel.addEventListener('click', e => {
+      e.stopPropagation();
+      const task = allTasks.find(t => t.id === copyBriefPanel.dataset.taskId);
+      if (!task?.brief_url) return;
+      navigator.clipboard.writeText(task.brief_url).then(() => {
+        copyBriefPanel.textContent = 'Copied!';
+        setTimeout(() => { copyBriefPanel.textContent = 'Copy Brief'; }, 1500);
+      });
     });
   }
 

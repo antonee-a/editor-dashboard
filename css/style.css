@@ -339,6 +339,50 @@ html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; backgrou
   font-size: 11px; font-weight: 700; color: var(--text-muted);
 }
 
+/* ── Task Stats Row ──────────────────────── */
+.task-stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-bottom: 20px;
+}
+
+.task-stat-card {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  transition: border-color .15s;
+}
+.task-stat-card[data-filter-status]:hover { border-color: var(--accent); }
+
+.task-stat-num   { font-size: 26px; font-weight: 800; color: var(--text); }
+.task-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+
+.task-stat-card--approval .task-stat-num { color: var(--warning); }
+.task-stat-card--blocked  .task-stat-num { color: var(--danger); }
+.task-stat-card--overdue  .task-stat-num { color: #f97316; }
+
+/* ── Queue Sections (Approval + Blocked) ── */
+.queue-section {
+  border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 20px; border: 1px solid var(--border);
+}
+
+.queue-section--approval { background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.3); }
+.queue-section--blocked  { background: rgba(239,68,68,.06);  border-color: rgba(239,68,68,.3); }
+
+.queue-section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.queue-section-title { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+.queue-section-count {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 10px; background: var(--bg-3); color: var(--text-muted);
+}
+.queue-section--approval .queue-section-count { background: rgba(245,158,11,.2); color: var(--warning); }
+.queue-section--blocked  .queue-section-count { background: rgba(239,68,68,.2);  color: var(--danger); }
+
+.task-grid--sm { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+
 /* ── Editor Card Sub-sections ─────────────── */
 .card-subsection { border-top: 1px solid var(--border); padding: 10px 0 2px; margin-top: 10px; }
 
