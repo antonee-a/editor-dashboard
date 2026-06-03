@@ -116,7 +116,7 @@ async function openPanel(editorId, editors) {
   const [{ data: tools }, { data: history }, { data: tasks }] = await Promise.all([
     db.from('editor_tools').select('*').eq('editor_id', editorId).order('tool_name'),
     db.from('speed_tier_history').select('*').eq('editor_id', editorId).order('changed_at', { ascending: false }),
-    db.from('tasks').select('id, title, status, client, date_assigned, due_date, brief, task_points')
+    db.from('tasks').select('id, title, status, client, date_assigned, due_date, brief_url, task_points')
       .eq('assigned_to', editorId).order('date_assigned', { ascending: false }),
   ]);
 
@@ -124,7 +124,7 @@ async function openPanel(editorId, editors) {
   const completedTasks = (tasks || []).filter(t => t.status === 'Completed');
 
   // Cache briefs for copy buttons
-  (tasks || []).forEach(t => { if (t.brief) briefCache[t.id] = t.brief; });
+  (tasks || []).forEach(t => { if (t.brief_url) briefCache[t.id] = t.brief_url; });
 
   const queuePoints = activeTasks.reduce((sum, t) => sum + (t.task_points || 0), 0);
 
@@ -153,7 +153,7 @@ async function openPanel(editorId, editors) {
           <span class="badge ${statusBadgeClass(t.status)}">${t.status}</span>
         </div>
         <div class="panel-task-row-meta">${escapeHtml(t.client || '')}${t.date_assigned ? ' &middot; ' + formatDate(t.date_assigned) : ''}</div>
-        ${t.brief ? `<button class="btn-brief btn-copy-brief" data-task-id="${t.id}">Copy Brief</button>` : ''}
+        ${t.brief_url ? `<button class="btn-brief btn-copy-brief" data-task-id="${t.id}">Copy Brief</button>` : ''}
       </div>`).join('') : '<p style="font-size:12px;color:var(--text-muted);font-style:italic;padding:4px 0">No active tasks.</p>'}
     </div>
 
