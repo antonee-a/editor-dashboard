@@ -126,7 +126,24 @@ async function openPanel(editorId, editors) {
   // Cache briefs for copy buttons
   (tasks || []).forEach(t => { if (t.brief) briefCache[t.id] = t.brief; });
 
+  const queuePoints = activeTasks.reduce((sum, t) => sum + (t.task_points || 0), 0);
+
   document.getElementById('panel-content').innerHTML = `
+    <div class="panel-summary-stats">
+      <div class="panel-summary-stat">
+        <span class="panel-summary-num">${activeTasks.length}</span>
+        <span class="panel-summary-label">Active</span>
+      </div>
+      <div class="panel-summary-stat">
+        <span class="panel-summary-num">${completedTasks.length}</span>
+        <span class="panel-summary-label">Completed</span>
+      </div>
+      <div class="panel-summary-stat">
+        <span class="panel-summary-num">${queuePoints}</span>
+        <span class="panel-summary-label">Queue Pts</span>
+      </div>
+    </div>
+
     <div class="panel-section">
       <h4>Active Tasks (${activeTasks.length})</h4>
       ${activeTasks.length ? activeTasks.map(t => `
