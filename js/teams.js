@@ -1,5 +1,8 @@
 import { db } from './supabase.js';
 
+// Brief text cache keyed by task id — populated when panel opens
+const briefCache = {};
+
 async function init() {
   await loadTeam();
   bindEditorModal();
@@ -16,30 +19,55 @@ async function loadTeam() {
     return;
   }
 
-  // Get active task counts and total points per editor
-  const { data: taskCounts } = await db
+  const ACTIVE_STATUSES = ['Assigned', 'In Progress', 'Ready', 'Under Review'];
+
+  const { data: allTasks } = await db
     .from('tasks')
     .select('assigned_to, task_points, status')
-    .in('status', ['In Progress', 'Under Review']);
+    .in('status', [...ACTIVE_STATUSES, 'Completed']);
 
-  const countMap = {};
-  const pointsMap = {};
-  (taskCounts || []).forEach(t => {
+  const activeMap    = {};  // editorId -> { assigned, inProgress, ready, underReview, total }
+  const completedMap = {};  // editorId -> count
+  const pointsMap    = {};  // editorId -> total queue points (active only)
+
+  (allTasks || []).forEach(t => {
     if (!t.assigned_to) return;
-    countMap[t.assigned_to]  = (countMap[t.assigned_to]  || 0) + 1;
-    pointsMap[t.assigned_to] = (pointsMap[t.assigned_to] || 0) + (t.task_points || 0);
+    if (t.status === 'Completed') {
+      completedMap[t.assigned_to] = (completedMap[t.assigned_to] || 0) + 1;
+    } else if (ACTIVE_STATUSES.includes(t.status)) {
+      if (!activeMap[t.assigned_to]) activeMap[t.assigned_to] = { assigned:0, inProgress:0, ready:0, underReview:0, total:0 };
+      const m = activeMap[t.assigned_to];
+      m.total++;
+      if (t.status === 'Assigned')      m.assigned++;
+      if (t.status === 'In Progress')   m.inProgress++;
+      if (t.status === 'Ready')         m.ready++;
+      if (t.status === 'Under Review')  m.underReview++;
+      pointsMap[t.assigned_to] = (pointsMap[t.assigned_to] || 0) + (t.task_points || 0);
+    }
   });
 
-  document.getElementById('team-grid').innerHTML = editors.map(e => editorCard(e, countMap[e.id] || 0, pointsMap[e.id] || 0)).join('');
+  const empty = { assigned:0, inProgress:0, ready:0, underReview:0, total:0 };
+  document.getElementById('team-grid').innerHTML = editors.map(e =>
+    editorCard(e, activeMap[e.id] || empty, completedMap[e.id] || 0, pointsMap[e.id] || 0)
+  ).join('');
 
   document.querySelectorAll('.editor-card').forEach(card => {
-    card.addEventListener('click', () => openPanel(card.dataset.id, editors, taskCounts));
+    card.addEventListener('click', () => openPanel(card.dataset.id, editors));
   });
 }
 
-function editorCard(e, activeTasks, totalPoints) {
-  const initials = e.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+function editorCard(e, activeCounts, completedCount, totalPoints) {
+  const initials  = e.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const tierClass = `badge-tier-${e.speed_tier.toLowerCase()}`;
+  const { assigned=0, inProgress=0, ready=0, underReview=0, total=0 } = activeCounts;
+
+  const statusRows = [
+    { label:'Assigned',     count:assigned,    cls:'status-dot-assigned' },
+    { label:'In Progress',  count:inProgress,  cls:'status-dot-progress' },
+    { label:'Ready',        count:ready,       cls:'status-dot-ready' },
+    { label:'Under Review', count:underReview, cls:'status-dot-review' },
+  ].filter(s => s.count > 0);
+
   return `
   <div class="editor-card" data-id="${e.id}">
     <div class="editor-card-top">
@@ -52,25 +80,85 @@ function editorCard(e, activeTasks, totalPoints) {
     <div class="editor-name">${e.name}</div>
     <div class="editor-role">${e.role}</div>
     ${e.strongest_formats?.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${e.strongest_formats.map(f => `<span class="badge" style="background:var(--bg-3);color:var(--text-muted);font-size:10px">${f}</span>`).join('')}</div>` : ''}
-    <div class="editor-stats">
-      <div class="editor-stat"><span class="editor-stat-val">${activeTasks}</span><span class="editor-stat-label">Active Tasks</span></div>
-      <div class="editor-stat"><span class="editor-stat-val">${totalPoints}</span><span class="editor-stat-label">Queue Points</span></div>
+
+    <div class="card-subsection">
+      <div class="card-subsection-label">Active Tasks <span class="card-subsection-count">${total}</span></div>
+      ${statusRows.length ? `<div class="status-breakdown">${statusRows.map(s => `
+        <div class="status-row">
+          <span class="status-row-dot ${s.cls}"></span>
+          <span class="status-row-label">${s.label}</span>
+          <span class="status-row-count">${s.count}</span>
+        </div>`).join('')}</div>` : '<div class="card-empty-sub">No active tasks</div>'}
+    </div>
+
+    <div class="card-subsection">
+      <div class="card-subsection-label">Velocity</div>
+      <div class="card-velocity-pending">Grading system coming soon</div>
+    </div>
+
+    <div class="card-subsection">
+      <div class="card-subsection-label">Completed <span class="card-subsection-count">${completedCount}</span></div>
+      ${completedCount > 0
+        ? `<div class="card-completed-count">${completedCount} task${completedCount !== 1 ? 's' : ''} completed</div>`
+        : '<div class="card-empty-sub">None yet</div>'}
     </div>
   </div>`;
 }
 
-async function openPanel(editorId, editors, taskCounts) {
+async function openPanel(editorId, editors) {
   const editor = editors.find(e => e.id === editorId);
   if (!editor) return;
 
   document.getElementById('panel-editor-name').textContent = editor.name;
 
-  const [{ data: tools }, { data: history }] = await Promise.all([
+  const ACTIVE_STATUSES = ['Assigned', 'In Progress', 'Ready', 'Under Review'];
+
+  const [{ data: tools }, { data: history }, { data: tasks }] = await Promise.all([
     db.from('editor_tools').select('*').eq('editor_id', editorId).order('tool_name'),
     db.from('speed_tier_history').select('*').eq('editor_id', editorId).order('changed_at', { ascending: false }),
+    db.from('tasks').select('id, title, status, client, date_assigned, due_date, brief, task_points')
+      .eq('assigned_to', editorId).order('date_assigned', { ascending: false }),
   ]);
 
+  const activeTasks    = (tasks || []).filter(t => ACTIVE_STATUSES.includes(t.status));
+  const completedTasks = (tasks || []).filter(t => t.status === 'Completed');
+
+  // Cache briefs for copy buttons
+  (tasks || []).forEach(t => { if (t.brief) briefCache[t.id] = t.brief; });
+
   document.getElementById('panel-content').innerHTML = `
+    <div class="panel-section">
+      <h4>Active Tasks (${activeTasks.length})</h4>
+      ${activeTasks.length ? activeTasks.map(t => `
+      <div class="panel-task-row">
+        <div class="panel-task-row-head">
+          <span class="panel-task-row-title">${escapeHtml(t.title)}</span>
+          <span class="badge ${statusBadgeClass(t.status)}">${t.status}</span>
+        </div>
+        <div class="panel-task-row-meta">${escapeHtml(t.client || '')}${t.date_assigned ? ' &middot; ' + formatDate(t.date_assigned) : ''}</div>
+        ${t.brief ? `<button class="btn-brief btn-copy-brief" data-task-id="${t.id}">Copy Brief</button>` : ''}
+      </div>`).join('') : '<p style="font-size:12px;color:var(--text-muted);font-style:italic;padding:4px 0">No active tasks.</p>'}
+    </div>
+
+    <div class="panel-section">
+      <h4>Velocity</h4>
+      <div class="panel-velocity-tbd">Grading system coming soon</div>
+    </div>
+
+    <div class="panel-section">
+      <h4>Completed (${completedTasks.length})</h4>
+      ${completedTasks.length ? completedTasks.map(t => `
+      <div class="panel-task-row panel-task-row--completed">
+        <div class="panel-task-row-head">
+          <span class="panel-task-row-title">${escapeHtml(t.title)}</span>
+          <span class="badge badge-status-completed">Completed</span>
+        </div>
+        <div class="panel-task-row-meta">${escapeHtml(t.client || '')}</div>
+      </div>`).join('') : '<p style="font-size:12px;color:var(--text-muted);font-style:italic;padding:4px 0">No completed tasks yet.</p>'}
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:4px 0 20px"></div>
+
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
       <span class="badge badge-tier-${editor.speed_tier.toLowerCase()}">${editor.speed_tier}</span>
       <span class="badge" style="background:${editor.status === 'Active' ? 'rgba(34,197,94,.15)' : 'rgba(122,127,154,.15)'};color:${editor.status === 'Active' ? 'var(--success)' : 'var(--text-muted)'}">${editor.status}</span>
@@ -130,6 +218,20 @@ async function openPanel(editorId, editors, taskCounts) {
       <button class="btn-ghost" style="width:100%" onclick="openEditEditorModal('${editor.id}')">Edit Profile</button>
     </div>
   `;
+
+  // Wire up Copy Brief buttons
+  document.getElementById('panel-content').querySelectorAll('.btn-copy-brief').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const brief = briefCache[btn.dataset.taskId];
+      if (!brief) return;
+      navigator.clipboard.writeText(brief).then(() => {
+        btn.textContent = 'Copied!';
+        btn.style.color = 'var(--success)';
+        setTimeout(() => { btn.textContent = 'Copy Brief'; btn.style.color = ''; }, 1500);
+      });
+    });
+  });
 
   document.getElementById('editor-panel').classList.remove('hidden');
   document.getElementById('panel-overlay').classList.remove('hidden');
@@ -218,6 +320,21 @@ function csvToArray(id) {
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function statusBadgeClass(status) {
+  const map = {
+    'Assigned':     'badge-status-assigned',
+    'In Progress':  'badge-status-progress',
+    'Ready':        'badge-status-ready',
+    'Under Review': 'badge-status-review',
+    'Completed':    'badge-status-completed',
+  };
+  return map[status] || '';
 }
 
 init();
